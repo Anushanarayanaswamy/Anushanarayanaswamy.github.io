@@ -361,13 +361,65 @@ function initInteractiveCLI() {
   });
 }
 
-/* 7. Contact Form Simulation */
-function handleFormSubmit() {
-  const name = document.getElementById('name').value;
+/* 7. Real Email Contact Form Submission via FormSubmit API */
+async function handleFormSubmit() {
+  const nameInput = document.getElementById('name');
+  const emailInput = document.getElementById('email');
+  const subjectInput = document.getElementById('subject');
+  const messageInput = document.getElementById('message');
   const feedback = document.getElementById('form-feedback');
+  const submitBtn = document.querySelector('#contact-form button[type="submit"]');
 
-  feedback.style.color = '#10b981';
-  feedback.innerHTML = `<i class="fa-solid fa-circle-check"></i> Thank you ${name}! Your message has been sent successfully. I will get back to you shortly.`;
+  const name = nameInput.value.trim();
+  const email = emailInput.value.trim();
+  const subject = subjectInput.value.trim();
+  const message = messageInput.value.trim();
 
-  document.getElementById('contact-form').reset();
+  if (!name || !email || !subject || !message) {
+    feedback.style.color = '#ef4444';
+    feedback.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Please fill in all fields.`;
+    return;
+  }
+
+  feedback.style.color = '#00f2fe';
+  feedback.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sending message directly to anushakn041@gmail.com...`;
+  submitBtn.disabled = true;
+
+  try {
+    const response = await fetch('https://formsubmit.co/ajax/anushakn041@gmail.com', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        name: name,
+        email: email,
+        _subject: `[Portfolio Contact] ${subject}`,
+        message: message,
+        _captcha: 'false'
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok || data.success === "true" || data.success === true) {
+      feedback.style.color = '#10b981';
+      feedback.innerHTML = `<i class="fa-solid fa-circle-check"></i> Success! Your message was delivered to anushakn041@gmail.com.`;
+      document.getElementById('contact-form').reset();
+    } else {
+      throw new Error(data.message || 'Submission error');
+    }
+  } catch (err) {
+    console.warn('FormSubmit endpoint error or network issue, using mailto fallback:', err);
+    feedback.style.color = '#f59e0b';
+    feedback.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Opening mail client for anushakn041@gmail.com...`;
+
+    setTimeout(() => {
+      window.location.href = `mailto:anushakn041@gmail.com?subject=${encodeURIComponent('[Portfolio Contact] ' + subject)}&body=${encodeURIComponent('From: ' + name + ' <' + email + '>\n\n' + message)}`;
+    }, 800);
+  } finally {
+    submitBtn.disabled = false;
+  }
 }
+
